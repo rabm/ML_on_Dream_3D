@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd"[]>
+<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">
+ <Domain>
+  <!-- *************** START OF SyntheticVolumeDataContainer *************** -->
+  <Grid Name="SyntheticVolumeDataContainer" GridType="Uniform">
+    <Topology TopologyType="3DCoRectMesh" Dimensions="17 22 22 "></Topology>
+    <Geometry Type="ORIGIN_DXDYDZ">
+      <!-- Origin  Z, Y, X -->
+      <DataItem Format="XML" Dimensions="3">0 2.25 2.25</DataItem>
+      <!-- DxDyDz (Spacing/Resolution) Z, Y, X -->
+      <DataItem Format="XML" Dimensions="3">0.45 0.45 0.45</DataItem>
+    </Geometry>
+    <Attribute Name="EulerAngles" AttributeType="Vector" Center="Cell">
+      <DataItem Format="HDF" Dimensions="16 21 21 3" NumberType="Float" Precision="4" >
+        3D_Block.dream3d:/DataContainers/SyntheticVolumeDataContainer/CellData/EulerAngles
+      </DataItem>
+    </Attribute>
+    <Attribute Name="FeatureIds" AttributeType="Scalar" Center="Cell">
+      <DataItem Format="HDF" Dimensions="16 21 21 1" NumberType="Int" Precision="4" >
+        3D_Block.dream3d:/DataContainers/SyntheticVolumeDataContainer/CellData/FeatureIds
+      </DataItem>
+    </Attribute>
+    <Attribute Name="GBEuclideanDistances" AttributeType="Scalar" Center="Cell">
+      <DataItem Format="HDF" Dimensions="16 21 21 1" NumberType="Float" Precision="4" >
+        3D_Block.dream3d:/DataContainers/SyntheticVolumeDataContainer/CellData/GBEuclideanDistances
+      </DataItem>
+    </Attribute>
+    <Attribute Name="IPFColor" AttributeType="Vector" Center="Cell">
+      <DataItem Format="HDF" Dimensions="16 21 21 3" NumberType="UChar" Precision="1" >
+        3D_Block.dream3d:/DataContainers/SyntheticVolumeDataContainer/CellData/IPFColor
+      </DataItem>
+    </Attribute>
+    <Attribute Name="Phases" AttributeType="Scalar" Center="Cell">
+      <DataItem Format="HDF" Dimensions="16 21 21 1" NumberType="Int" Precision="4" >
+        3D_Block.dream3d:/DataContainers/SyntheticVolumeDataContainer/CellData/Phases
+      </DataItem>
+    </Attribute>
+    <Attribute Name="QPEuclideanDistances" AttributeType="Scalar" Center="Cell">
+      <DataItem Format="HDF" Dimensions="16 21 21 1" NumberType="Float" Precision="4" >
+        3D_Block.dream3d:/DataContainers/SyntheticVolumeDataContainer/CellData/QPEuclideanDistances
+      </DataItem>
+    </Attribute>
+    <Attribute Name="TJEuclideanDistances" AttributeType="Scalar" Center="Cell">
+      <DataItem Format="HDF" Dimensions="16 21 21 1" NumberType="Float" Precision="4" >
+        3D_Block.dream3d:/DataContainers/SyntheticVolumeDataContainer/CellData/TJEuclideanDistances
+      </DataItem>
+    </Attribute>
+  </Grid>
+  <!-- *************** END OF SyntheticVolumeDataContainer *************** -->
+ </Domain>
+</Xdmf>
