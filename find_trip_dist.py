@@ -1,0 +1,123 @@
+import csv
+import numpy as np
+name = 'test2.csv'
+#np.set_printoptions(threshold=np.inf)
+#Given a file name, return an array of parameter "value"
+def get_value_array(name,value):
+
+	with open(name, 'r') as csvfile:
+		reader = csv.reader(csvfile)	
+		rownum = 0
+		max_x,max_y,max_z = 0,0,0
+		data_array = []
+		for row in reader:
+			if (not rownum): #Identify columns via first row
+				V_col = row.index(value)
+				X_col = row.index('Structured Coordinates:0')
+				Y_col = row.index('Structured Coordinates:1')
+				Z_col = row.index('Structured Coordinates:2')
+			else:
+				xval,yval,zval = int(row[X_col]),int(row[Y_col]),int(row[Z_col])
+				if xval > max_x: max_x = xval
+				if yval > max_y: max_y = yval
+				if zval > max_z: max_z = zval
+				data_array += [row]
+			rownum += 1
+		
+		V_array = np.ones(((max_z + 1,max_y + 1,max_x + 1)))*-1
+		for row in data_array:
+			xval,yval,zval,V = int(row[X_col]),int(row[Y_col]),int(row[Z_col]),float(row[V_col])
+			V_array[zval][yval][xval] = V
+			
+	return V_array
+
+
+def find_root(p, union_array):
+	while (p[3] != (union_array[p[0]][p[1]][p[2]][3]) ):
+		p = (union_array[p[0]][p[1]][p[2]])
+	return p
+
+def union(p1,p2,union_array):
+	p1_v,p2_v = p1[3],p2[3]
+	root1 = find_root(p1,union_array)
+	root2 = find_root(p2,union_array)
+	if (p1_v < p2_v):
+		union_array[root2[0]][root2[1]][root2[2]] = root1
+	elif (p2_v < p1_v):
+		union_array[root1[0]][root1[1]][root1[2]] = root2
+	return union_array
+
+def same_FID(val1,val2,FID_array):
+	FID1 = FID_array[val1[0]][val1[1]][val1[2]]
+	FID2 = FID_array[val2[0]][val2[1]][val2[2]]
+	return (FID1 == FID2)
+
+def union_array(GB_array,FID_array):
+	size_z,size_y,size_x = GB_array.shape
+	union_array = np.zeros( ((size_z,size_y,size_x)), dtype = ('i4,i4,i4,i4') ) 
+	count = 1
+	for z in range(size_z):
+		for y in range(size_y):
+			for x in range(size_x): #Label all points on GB as non-zero and distinct in union_array
+				if (not GB_array[z][y][x]):
+					union_array[z][y][x] = (z,y,x,count)
+					count += 1	
+	
+	for z in range(size_z):
+		for y in range(size_y):
+			for x in range(size_x):
+				val = union_array[z][y][x]
+				if (val[3]): #On a triple junction point
+					rid = (z, y, (x + 1) % size_x, union_array[z][y][(x + 1) % size_x][3] ) #index of right point	
+					did = (z, (y + 1) % size_y, x, union_array[z][(y + 1) % size_y][x][3] ) #index of down point 
+					drid = (z, (y + 1) % size_y,(x + 1) % size_x, union_array[z][(y + 1) % size_y][(x + 1) % size_x ][3]) #index of down-right point
+					urid = (z, (y - 1) % size_y,(x + 1) % size_x, union_array[z][(y - 1) % size_y][(x + 1) % size_x ][3]) #index of up-right point 
+					if (rid[3]) and (same_FID(val,rid,FID_array)):union_array = union(val,rid,union_array)
+					if (did[3]) and (same_FID(val,did,FID_array)):union_array = union(val,did, union_array)
+					if (drid[3]) and (same_FID(val,drid,FID_array)):union_array = union(val, drid, union_array)
+					if (urid[3]) and (same_FID(val,urid,FID_array)):union_array = union(val, urid, union_array)
+	return union_array
+
+def make_GB_list(union_array):
+	size_z,size_y,size_x = GB_array.shape
+	GB_list = []
+	for z in range(size_z):
+		for y in range(size_y):
+			for x in range(size_x):
+				p = union_array[z][y][x]
+				if (p[3] != 0):
+					root = find_root(union_array[z][y][x],union_array)
+					root_num = root[3]
+					GB_list += [[z,y,x,root_num]]	
+	GB_list = sorted(GB_list,key=lambda x: x[3])
+	return GB_list
+
+def clean_list(L):
+	count = 1
+	last_num = L[0][3]
+	L[0][3] = count
+	for i in range(1,len(L)):
+		curr_num = L[i][3]
+
+		if (curr_num > last_num):
+			count += 1
+			L[i][3] = count
+
+		else: L[i][3] = count
+
+		last_num = curr_num
+
+	return L
+ 
+
+value = "GBEuclideanDistances"
+GB_array = get_value_array(name,value)
+value = "FeatureIds"
+FID_array = get_value_array(name,value)
+
+size_z,size_y,size_x = GB_array.shape
+union_array = union_array(GB_array,FID_array)
+GB_list = make_GB_list(union_array)
+GB_list = clean_list(GB_list)
+
+np.savetxt('2d_GB_list_test.txt', GB_list, delimiter=',', fmt = '%.4f')
