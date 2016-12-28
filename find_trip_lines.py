@@ -1,6 +1,6 @@
 import csv
 import numpy as np
-name = '3D_block.csv'
+name = '3D_block_complex.csv'
 #np.set_printoptions(threshold=np.inf)
 #Given a file name, return an array of parameter "value"
 def get_value_array(name,value):
