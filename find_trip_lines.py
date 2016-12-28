@@ -40,8 +40,11 @@ def find_neighbor_set(i,j,k,FID_array):
 	for zpos in xrange(i - 1,i + 2,1):
 		for ypos in xrange(j - 1,j + 2, 1):
 			for xpos in xrange(k - 1,k + 2, 1):
-				neighbor = FID_array[zpos % size_z][ypos % size_y][xpos % size_x]
-				neighbor_set.add(neighbor)
+				if ( (size_x > xpos > -1) and (size_y > ypos > -1) and (size_z > zpos > -1) ):
+					neighbor = FID_array[zpos][ypos][xpos]
+					if ( (i,j,k) == (0,0,3)): print xpos,ypos,zpos,neighbor
+					neighbor_set.add(neighbor)
+	print neighbor_set
 	return neighbor_set
 				
 #returns (index of list_of_NN in neighbor list,1 = found in NN list 0 = not found, 
