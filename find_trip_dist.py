@@ -1,6 +1,7 @@
 import csv
 import numpy as np
 name = 'test2.csv'
+
 #np.set_printoptions(threshold=np.inf)
 #Given a file name, return an array of parameter "value"
 def get_value_array(name,value):
@@ -33,12 +34,12 @@ def get_value_array(name,value):
 
 
 def find_root(p, union_array):
-	while (p[3] != (union_array[p[0]][p[1]][p[2]][3]) ):
+	while (make_char_num(p) != make_char_num(union_array[p[0]][p[1]][p[2]]) ):
 		p = (union_array[p[0]][p[1]][p[2]])
 	return p
 
 def union(p1,p2,union_array):
-	p1_v,p2_v = p1[3],p2[3] #Get value of p1 and p2
+	p1_v,p2_v = make_char_num(p1),make_char_num(p2) #Get value of p1 and p2
 	root1 = find_root(p1,union_array)
 	root2 = find_root(p2,union_array)
 	if (p1_v < p2_v):
@@ -52,39 +53,53 @@ def same_FID(val1,val2,FID_array):
 	FID2 = FID_array[val2[0]][val2[1]][val2[2]]
 	return (FID1 == FID2)
 
-#Makes the ID data structure; (z,y,x,union_array value at that point)
-def make_ID(z,y,x,union_array):
-	return (z,y,x,union_array[x][y][z][3])
+#Makes a number to represent a point (z,y,x)
+#The "characteristic number" of the point
+def make_char_num(p):
+	(z,y,x) = p
+	return z*(10**6) + y*(10**3) + x
+
+#If (z,y,x) is on grain boundary/ triple point, ect.
+#coord = (z,y,x). 0 = Not a special point. 1 = is a special point.
+def is_special_point(array,coord):
+	val = array[coord[0]][coord[1]][coord[2]][0]
+	return (val + 1) 
 
 """Build a 3D union data structure of material 
 """
 
+
 def union_array(GB_array,FID_array):
 	size_z,size_y,size_x = GB_array.shape
-	union_array = np.zeros( ((size_z,size_y,size_x)), dtype = ('i4,i4,i4,i4') ) 
-	count = 1
+	union_array = np.ones( ((size_z,size_y,size_x)), dtype = ('i4,i4,i4') )
+	union_array.fill( (-1,-1,-1) ) 
 	#label each GB point on the material with a unique number
 	for z in range(size_z):
 		for y in range(size_y):
 			for x in range(size_x): #Label all points on GB as non-zero and distinct in union_array
 				if (not GB_array[z][y][x]): #Distance is 0 from a GB, so we're on one
-					union_array[z][y][x] = (z,y,x,count) #Root is current position 
-					count += 1	
-	
+					union_array[z][y][x] = (z,y,x) #Root is current position 
+
+	#(-1,-1,-1) denotes a non-GB point. Else, (z,y,x) denotes root of current point	
 	for z in range(size_z):
 		for y in range(size_y):
 			for x in range(size_x):
 				val = union_array[z][y][x]
-				if (val[3]): #On a triple junction point	
-					rid = (z,y,(x + 1) % size_x,union_array) #(z, y, (x + 1) % size_x, union_array[z][y][(x + 1) % size_x][3] ) #index of right point	
-					did = (z, (y + 1) % size_y,x,union_array) #index of down point 
-					drid = (z, (y + 1) % size_y,(x + 1) % size_x, union_array) #index of down-right point
-					urid = (z, (y - 1) % size_y,(x + 1) % size_x, union_arra) #index of up-right point 
-					if (rid[3]) and (same_FID(val,rid,FID_array)):union_array = union(val,rid,union_array)
-					if (did[3]) and (same_FID(val,did,FID_array)):union_array = union(val,did, union_array)
-					if (drid[3]) and (same_FID(val,drid,FID_array)):union_array = union(val, drid, union_array)
-					if (urid[3]) and (same_FID(val,urid,FID_array)):union_array = union(val, urid, union_array)
+				if (is_special_point(union_array,(z,y,x))): #On a triple junction point	
+					rid = (z,y,(x + 1) % size_x) #index of point to right
+					did = (z, (y + 1) % size_y,x) #index of down point 
+					drid = (z, (y + 1) % size_y,(x + 1) % size_x) #index of down-right point
+					urid = (z, (y - 1) % size_y,(x + 1) % size_x) #index of up-right point 
+					if (is_special_point(union_array,rid)) and (same_FID(val,rid,FID_array)):union_array = union(val,rid,union_array)
+					if (is_special_point(union_array,did)) and (same_FID(val,did,FID_array)):union_array = union(val,did, union_array)
+					if (is_special_point(union_array,drid)) and (same_FID(val,drid,FID_array)):union_array = union(val, drid, union_array)
+					if (is_special_point(union_array,urid)) and (same_FID(val,urid,FID_array)):union_array = union(val, urid, union_array)
 	return union_array
+
+
+#Given a union array, make a 1d list of (x,y,z) 
+#points and their grain boundary/ triple point
+#number
 
 def make_GB_list(union_array):
 	size_z,size_y,size_x = GB_array.shape
@@ -92,10 +107,10 @@ def make_GB_list(union_array):
 	for z in range(size_z):
 		for y in range(size_y):
 			for x in range(size_x):
-				p = union_array[z][y][x]
-				if (p[3] != 0):
-					root = find_root(union_array[z][y][x],union_array)
-					root_num = root[3]
+				p = (z,y,x)
+				if (is_special_point(union_array, p)):
+					root = find_root(p,union_array)
+					root_num = make_char_num(root)
 					GB_list += [[z,y,x,root_num]]	
 	GB_list = sorted(GB_list,key=lambda x: x[3])
 	return GB_list
@@ -126,6 +141,6 @@ FID_array = get_value_array(name,value)
 size_z,size_y,size_x = GB_array.shape
 union_array = union_array(GB_array,FID_array)
 GB_list = make_GB_list(union_array)
-GB_list = clean_list(GB_list)
+#GB_list = clean_list(GB_list)
 
 np.savetxt('2d_GB_list_test.txt', GB_list, delimiter=',', fmt = '%.4f')
