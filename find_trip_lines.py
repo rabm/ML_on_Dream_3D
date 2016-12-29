@@ -1,6 +1,6 @@
 import csv
 import numpy as np
-name = '3D_block_complex.csv'
+name = '3D_block_complex_2.csv'
 #np.set_printoptions(threshold=np.inf)
 #Given a file name, return an array of parameter "value"
 def get_value_array(name,value):
@@ -42,9 +42,9 @@ def find_neighbor_set(i,j,k,FID_array):
 			for xpos in xrange(k - 1,k + 2, 1):
 				if ( (size_x > xpos > -1) and (size_y > ypos > -1) and (size_z > zpos > -1) ):
 					neighbor = FID_array[zpos][ypos][xpos]
-					if ( (i,j,k) == (0,0,3)): print xpos,ypos,zpos,neighbor
 					neighbor_set.add(neighbor)
-	print neighbor_set
+					if ( (k,j,i) == (8,23,29)): print neighbor
+	if ( (k,j,i) == (8,23,29) ): print neighbor_set
 	return neighbor_set
 				
 #returns (index of list_of_NN in neighbor list,1 = found in NN list 0 = not found, 

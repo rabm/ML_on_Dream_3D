@@ -38,7 +38,7 @@ def find_root(p, union_array):
 	return p
 
 def union(p1,p2,union_array):
-	p1_v,p2_v = p1[3],p2[3]
+	p1_v,p2_v = p1[3],p2[3] #Get value of p1 and p2
 	root1 = find_root(p1,union_array)
 	root2 = find_root(p2,union_array)
 	if (p1_v < p2_v):
@@ -52,26 +52,34 @@ def same_FID(val1,val2,FID_array):
 	FID2 = FID_array[val2[0]][val2[1]][val2[2]]
 	return (FID1 == FID2)
 
+#Makes the ID data structure; (z,y,x,union_array value at that point)
+def make_ID(z,y,x,union_array):
+	return (z,y,x,union_array[x][y][z][3])
+
+"""Build a 3D union data structure of material 
+"""
+
 def union_array(GB_array,FID_array):
 	size_z,size_y,size_x = GB_array.shape
 	union_array = np.zeros( ((size_z,size_y,size_x)), dtype = ('i4,i4,i4,i4') ) 
 	count = 1
+	#label each GB point on the material with a unique number
 	for z in range(size_z):
 		for y in range(size_y):
 			for x in range(size_x): #Label all points on GB as non-zero and distinct in union_array
-				if (not GB_array[z][y][x]):
-					union_array[z][y][x] = (z,y,x,count)
+				if (not GB_array[z][y][x]): #Distance is 0 from a GB, so we're on one
+					union_array[z][y][x] = (z,y,x,count) #Root is current position 
 					count += 1	
 	
 	for z in range(size_z):
 		for y in range(size_y):
 			for x in range(size_x):
 				val = union_array[z][y][x]
-				if (val[3]): #On a triple junction point
-					rid = (z, y, (x + 1) % size_x, union_array[z][y][(x + 1) % size_x][3] ) #index of right point	
-					did = (z, (y + 1) % size_y, x, union_array[z][(y + 1) % size_y][x][3] ) #index of down point 
-					drid = (z, (y + 1) % size_y,(x + 1) % size_x, union_array[z][(y + 1) % size_y][(x + 1) % size_x ][3]) #index of down-right point
-					urid = (z, (y - 1) % size_y,(x + 1) % size_x, union_array[z][(y - 1) % size_y][(x + 1) % size_x ][3]) #index of up-right point 
+				if (val[3]): #On a triple junction point	
+					rid = (z,y,(x + 1) % size_x,union_array) #(z, y, (x + 1) % size_x, union_array[z][y][(x + 1) % size_x][3] ) #index of right point	
+					did = (z, (y + 1) % size_y,x,union_array) #index of down point 
+					drid = (z, (y + 1) % size_y,(x + 1) % size_x, union_array) #index of down-right point
+					urid = (z, (y - 1) % size_y,(x + 1) % size_x, union_arra) #index of up-right point 
 					if (rid[3]) and (same_FID(val,rid,FID_array)):union_array = union(val,rid,union_array)
 					if (did[3]) and (same_FID(val,did,FID_array)):union_array = union(val,did, union_array)
 					if (drid[3]) and (same_FID(val,drid,FID_array)):union_array = union(val, drid, union_array)
