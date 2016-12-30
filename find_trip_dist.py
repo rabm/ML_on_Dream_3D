@@ -39,9 +39,9 @@ def find_root(p, union_array):
 	return p
 
 def union(p1,p2,union_array):
-	p1_v,p2_v = make_char_num(p1),make_char_num(p2) #Get value of p1 and p2
 	root1 = find_root(p1,union_array)
 	root2 = find_root(p2,union_array)
+	p1_v,p2_v = make_char_num(root1),make_char_num(root2)
 	if (p1_v < p2_v):
 		union_array[root2[0]][root2[1]][root2[2]] = root1
 	elif (p2_v < p1_v):
@@ -66,7 +66,8 @@ def is_special_point(array,coord):
 	return (val + 1) 
 
 """Build a 3D union data structure of material 
-"""
+Tuple at every point. (-1,-1,-1) if not on a GB
+(x,y,z) of root of point if on a grain boundary"""
 
 
 def union_array(GB_array,FID_array):
@@ -141,6 +142,6 @@ FID_array = get_value_array(name,value)
 size_z,size_y,size_x = GB_array.shape
 union_array = union_array(GB_array,FID_array)
 GB_list = make_GB_list(union_array)
-#GB_list = clean_list(GB_list)
+GB_list = clean_list(GB_list)
 
 np.savetxt('2d_GB_list_test.txt', GB_list, delimiter=',', fmt = '%.4f')
