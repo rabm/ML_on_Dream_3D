@@ -1,9 +1,12 @@
 import csv
 import numpy as np
 name = 'test2.csv'
+output = '2d_GB_list_test'
 
 #np.set_printoptions(threshold=np.inf)
 #Given a file name, return an array of parameter "value"
+#in array[z][y][x] form
+#Assume output csv format from paraviewi
 def get_value_array(name,value):
 
 	with open(name, 'r') as csvfile:
@@ -32,11 +35,17 @@ def get_value_array(name,value):
 			
 	return V_array
 
+#Given a point p (z,y,x), find it's 
+#root in the union array
 
 def find_root(p, union_array):
 	while (make_char_num(p) != make_char_num(union_array[p[0]][p[1]][p[2]]) ):
 		p = (union_array[p[0]][p[1]][p[2]])
 	return p
+
+#Given two points, p1 and p2, in the form (z,y,x)
+#and the union_array encoding the root of every
+#point, union the two points.
 
 def union(p1,p2,union_array):
 	root1 = find_root(p1,union_array)
@@ -48,6 +57,8 @@ def union(p1,p2,union_array):
 		union_array[root1[0]][root1[1]][root1[2]] = root2
 	return union_array
 
+#Check whether val1 and val2, in (z,y,x) form, 
+#have the same feature ID
 def same_FID(val1,val2,FID_array):
 	FID1 = FID_array[val1[0]][val1[1]][val1[2]]
 	FID2 = FID_array[val2[0]][val2[1]][val2[2]]
@@ -55,6 +66,7 @@ def same_FID(val1,val2,FID_array):
 
 #Makes a number to represent a point (z,y,x)
 #The "characteristic number" of the point
+#Assumes x,y,z < 1000
 def make_char_num(p):
 	(z,y,x) = p
 	return z*(10**6) + y*(10**3) + x
@@ -91,10 +103,10 @@ def union_array(GB_array,FID_array):
 					did = (z, (y + 1) % size_y,x) #index of down point 
 					drid = (z, (y + 1) % size_y,(x + 1) % size_x) #index of down-right point
 					urid = (z, (y - 1) % size_y,(x + 1) % size_x) #index of up-right point 
-					if (is_special_point(union_array,rid)) and (same_FID(val,rid,FID_array)):union_array = union(val,rid,union_array)
-					if (is_special_point(union_array,did)) and (same_FID(val,did,FID_array)):union_array = union(val,did, union_array)
-					if (is_special_point(union_array,drid)) and (same_FID(val,drid,FID_array)):union_array = union(val, drid, union_array)
-					if (is_special_point(union_array,urid)) and (same_FID(val,urid,FID_array)):union_array = union(val, urid, union_array)
+					if (is_special_point(union_array,rid)) and (same_FID(val,rid,FID_array)): union_array = union(val,rid,union_array)
+					if (is_special_point(union_array,did)) and (same_FID(val,did,FID_array)): union_array = union(val,did, union_array)
+					if (is_special_point(union_array,drid)) and (same_FID(val,drid,FID_array)): union_array = union(val, drid, union_array)
+					if (is_special_point(union_array,urid)) and (same_FID(val,urid,FID_array)): union_array = union(val, urid, union_array)
 	return union_array
 
 
@@ -112,16 +124,20 @@ def make_GB_list(union_array):
 				if (is_special_point(union_array, p)):
 					root = find_root(p,union_array)
 					root_num = make_char_num(root)
-					GB_list += [[z,y,x,root_num]]	
+					GB_list += [[x,y,z,root_num]]	
+				else:
+					GB_list += [[x,y,z,-1]]
 	GB_list = sorted(GB_list,key=lambda x: x[3])
 	return GB_list
 
+
+#Take an ordered list, and make all numbers consecutive integers
 def clean_list(L):
-	count = 1
-	last_num = L[0][3]
+	count = -1
+	last_num = L[0][3] 
 	L[0][3] = count
-	for i in range(1,len(L)):
-		curr_num = L[i][3]
+	for i in range(1,len(L)):  
+		curr_num = L[i][3] #current value 
 
 		if (curr_num > last_num):
 			count += 1
@@ -144,4 +160,11 @@ union_array = union_array(GB_array,FID_array)
 GB_list = make_GB_list(union_array)
 GB_list = clean_list(GB_list)
 
-np.savetxt('2d_GB_list_test.txt', GB_list, delimiter=',', fmt = '%.4f')
+f = open(output,'wt')
+writer = csv.writer(f)
+writer.writerow( ('x','y','z','num'))
+for i in range(len(GB_list)):
+	writer.writerow( (GB_list[i][0],GB_list[i][1],GB_list[i][2],GB_list[i][3] ))
+
+
+#np.savetxt('2d_GB_list_test.txt', GB_list, delimiter=',', fmt = '%.4f')
