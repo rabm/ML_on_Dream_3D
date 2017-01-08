@@ -1,7 +1,7 @@
 import csv
 import numpy as np
 name = 'test2.csv'
-output = '2d_GB_list_test'
+output = '2d_GB_list_test.csv'
 
 #np.set_printoptions(threshold=np.inf)
 #Given a file name, return an array of parameter "value"
