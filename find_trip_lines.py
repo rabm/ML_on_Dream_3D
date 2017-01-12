@@ -62,7 +62,7 @@ def find_index(neighbor_set, list_of_NN):
 
 #TJ_Num_array --> -1 = Not a TJ point
 # Integer greater than or equal to zero = TJ number of point
-
+#Format: [ [z,y,x,Num] ]
 
 def label_TJ(TJ_array, FID_array):
 	size_z,size_y,size_x = TJ_array.shape
@@ -73,7 +73,7 @@ def label_TJ(TJ_array, FID_array):
 	for i in xrange(size_z):
 		for j in xrange(size_y):
 			for k in xrange(size_x):
-				TJ_Num_array_linear[count] = [k,j,i,-1] #Add current point to linear array.
+				TJ_Num_array_linear[count] = [i,j,k,-1] #Add current point to linear array.
 				if (TJ_array[i][j][k] == 0): #Found a triple junction point!
 					neighbor_set = find_neighbor_set(i,j,k,FID_array) #get set of neighbors to this point
 					list_index = find_index(neighbor_set,list_of_NN) #get index of these neighbors in list_of_NN		
@@ -90,5 +90,4 @@ print TJ_array.shape
 value = "FeatureIds"
 FID_array = get_value_array(name,value)
 TJ_Num_array_linear = label_TJ(TJ_array, FID_array)
-np.savetxt('3D_Block_TJ_lines.out',TJ_Num_array_linear,delimiter=',', fmt = '%d')
-
+np.savetxt('3D_Block_TJ_lines.txt',TJ_Num_array_linear,delimiter=',', fmt = '%d')

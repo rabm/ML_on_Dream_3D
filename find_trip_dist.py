@@ -124,9 +124,9 @@ def make_GB_list(union_array):
 				if (is_special_point(union_array, p)):
 					root = find_root(p,union_array)
 					root_num = make_char_num(root)
-					GB_list += [[x,y,z,root_num]]	
+					GB_list += [[z,y,x,root_num]]	
 				else:
-					GB_list += [[x,y,z,-1]]
+					GB_list += [[z,y,x,-1]]
 	GB_list = sorted(GB_list,key=lambda x: x[3])
 	return GB_list
 
@@ -160,11 +160,12 @@ union_array = union_array(GB_array,FID_array)
 GB_list = make_GB_list(union_array)
 GB_list = clean_list(GB_list)
 
+"""
 f = open(output,'wt')
 writer = csv.writer(f)
 writer.writerow( ('x','y','z','num'))
 for i in range(len(GB_list)):
 	writer.writerow( (GB_list[i][0],GB_list[i][1],GB_list[i][2],GB_list[i][3] ))
 
-
-#np.savetxt('2d_GB_list_test.txt', GB_list, delimiter=',', fmt = '%.4f')
+"""
+np.savetxt('2d_GB_list_test.txt', GB_list, delimiter=',', fmt = '%.4f')
