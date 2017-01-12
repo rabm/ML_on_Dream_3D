@@ -1,5 +1,6 @@
 import csv
 import numpy as np
+from evtk.hl import pointsToVTK
 name = 'test2.csv'
 output = '2d_GB_list_test.csv'
 
@@ -147,8 +148,16 @@ def clean_list(L):
 
 		last_num = curr_num
 
-	return L
+	return np.array(L)
  
+
+def output_to_vtk(GB_list):
+	z = np.array(GB_list[:,0])
+	y = np.array(GB_list[:,1])
+	x = np.array(GB_list[:,2])
+	vals = np.array(GB_list[:,3])
+	
+	pointsToVTK("./points",x,y,z, data = {"GB_dist" : vals})
 
 value = "GBEuclideanDistances"
 GB_array = get_value_array(name,value)
@@ -168,4 +177,5 @@ for i in range(len(GB_list)):
 	writer.writerow( (GB_list[i][0],GB_list[i][1],GB_list[i][2],GB_list[i][3] ))
 
 """
+output_to_vtk(GB_list)
 np.savetxt('2d_GB_list_test.txt', GB_list, delimiter=',', fmt = '%.4f')
