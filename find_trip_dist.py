@@ -1,8 +1,10 @@
 import csv
 import numpy as np
 from evtk.hl import pointsToVTK
-name = 'test2.csv'
-output = '2d_GB_list_test.csv'
+from evtk.hl import imageToVTK 
+
+name = '3D_Block_complex.csv'
+output = './3D_Block_complex_2'
 
 #np.set_printoptions(threshold=np.inf)
 #Given a file name, return an array of parameter "value"
@@ -83,15 +85,15 @@ Tuple at every point. (-1,-1,-1) if not on a GB
 (x,y,z) of root of point if on a grain boundary"""
 
 
-def union_array(GB_array,FID_array):
-	size_z,size_y,size_x = GB_array.shape
+def Union_Array(TJ_array,FID_array):
+	size_z,size_y,size_x = TJ_array.shape
 	union_array = np.ones( ((size_z,size_y,size_x)), dtype = ('i4,i4,i4') )
 	union_array.fill( (-1,-1,-1) ) 
-	#label each GB point on the material with a unique number
+	#label each TJ point on the material with a unique number
 	for z in range(size_z):
 		for y in range(size_y):
 			for x in range(size_x): #Label all points on GB as non-zero and distinct in union_array
-				if (not GB_array[z][y][x]): #Distance is 0 from a GB, so we're on one
+				if (not TJ_array[z][y][x]): #Distance is 0 from a GB, so we're on one
 					union_array[z][y][x] = (z,y,x) #Root is current position 
 
 	#(-1,-1,-1) denotes a non-GB point. Else, (z,y,x) denotes root of current point	
@@ -100,24 +102,32 @@ def union_array(GB_array,FID_array):
 			for x in range(size_x):
 				val = union_array[z][y][x]
 				if (is_special_point(union_array,(z,y,x))): #On a triple junction point	
-					rid = (z,y,(x + 1) % size_x) #index of point to right
-					did = (z, (y + 1) % size_y,x) #index of down point 
-					drid = (z, (y + 1) % size_y,(x + 1) % size_x) #index of down-right point
-					urid = (z, (y - 1) % size_y,(x + 1) % size_x) #index of up-right point 
-					if (is_special_point(union_array,rid)) and (same_FID(val,rid,FID_array)): union_array = union(val,rid,union_array)
-					if (is_special_point(union_array,did)) and (same_FID(val,did,FID_array)): union_array = union(val,did, union_array)
-					if (is_special_point(union_array,drid)) and (same_FID(val,drid,FID_array)): union_array = union(val, drid, union_array)
-					if (is_special_point(union_array,urid)) and (same_FID(val,urid,FID_array)): union_array = union(val, urid, union_array)
+					union_array = union_point_with_neighbors((z,y,x),union_array,FID_array)
 	return union_array
 
+#Given a point p(z,y,x) and the union_array,
+#return a union_array with p union'd with 
+#'special point' neighbors
+
+def union_point_with_neighbors(p,union_array,FID_array):
+	z,y,x = p
+	size_z,size_y,size_x = union_array.shape
+	val = union_array[z][y][x]
+	for z_step in range(-1,2,1):
+		for y_step in range(-1,2,1):
+			for x_step in range(-1,2,1):
+				pid = ( (z + z_step) % size_z ,(y + y_step) % size_y , (x + x_step) % size_x )
+				if ( (is_special_point(union_array,pid)) and (same_FID(val,pid,FID_array)) ):
+					union_array = union(val,pid,union_array)
+	return union_array
 
 #Given a union array, make a 1d list of (x,y,z) 
 #points and their grain boundary/ triple point
 #number
 
-def make_GB_list(union_array):
-	size_z,size_y,size_x = GB_array.shape
-	GB_list = []
+def make_TJ_list(union_array,TJ_array):
+	size_z,size_y,size_x = TJ_array.shape
+	TJ_list = []
 	for z in range(size_z):
 		for y in range(size_y):
 			for x in range(size_x):
@@ -125,11 +135,11 @@ def make_GB_list(union_array):
 				if (is_special_point(union_array, p)):
 					root = find_root(p,union_array)
 					root_num = make_char_num(root)
-					GB_list += [[z,y,x,root_num]]	
+					TJ_list += [[z,y,x,root_num]]	
 				else:
-					GB_list += [[z,y,x,-1]]
-	GB_list = sorted(GB_list,key=lambda x: x[3])
-	return GB_list
+					TJ_list += [[z,y,x,-1]]
+	TJ_list = sorted(TJ_list,key=lambda x: x[3])
+	return TJ_list
 
 
 #Take an ordered list, and make all numbers consecutive integers
@@ -151,31 +161,32 @@ def clean_list(L):
 	return np.array(L)
  
 
-def output_to_vtk(GB_list):
-	z = np.array(GB_list[:,0])
-	y = np.array(GB_list[:,1])
-	x = np.array(GB_list[:,2])
-	vals = np.array(GB_list[:,3])
+def output_to_vtk_points(L):
+	z = np.array(L[:,0])
+	y = np.array(L[:,1])
+	x = np.array(L[:,2])
+	vals = np.array(L[:,3])
 	
-	pointsToVTK("./points",x,y,z, data = {"GB_dist" : vals})
+	pointsToVTK(output,x,y,z, data = {"TJ_dist" : vals})
 
-value = "GBEuclideanDistances"
-GB_array = get_value_array(name,value)
+def output_to_vtk_image(L,size_x,size_y,size_z):
+	vals = np.zeros(((size_x,size_y,size_z)))
+	for i in xrange(len(L)):
+		x,y,z = L[i][2],L[i][1],L[i][0]
+		val = L[i][3]
+		vals[x][y][z] = val
+	imageToVTK(output, cellData = {"TJ Num" : vals})	
+		
+
+value = "TJEuclideanDistances"
+TJ_array = get_value_array(name,value)
 value = "FeatureIds"
 FID_array = get_value_array(name,value)
 
-size_z,size_y,size_x = GB_array.shape
-union_array = union_array(GB_array,FID_array)
-GB_list = make_GB_list(union_array)
-GB_list = clean_list(GB_list)
-
-"""
-f = open(output,'wt')
-writer = csv.writer(f)
-writer.writerow( ('x','y','z','num'))
-for i in range(len(GB_list)):
-	writer.writerow( (GB_list[i][0],GB_list[i][1],GB_list[i][2],GB_list[i][3] ))
-
-"""
-output_to_vtk(GB_list)
-np.savetxt('2d_GB_list_test.txt', GB_list, delimiter=',', fmt = '%.4f')
+size_z,size_y,size_x = TJ_array.shape
+union_array = Union_Array(TJ_array,FID_array)
+TJ_list = make_TJ_list(union_array,TJ_array)
+TJ_list = clean_list(TJ_list)
+print TJ_list
+output_to_vtk_image(TJ_list,size_x,size_y,size_z)
+#output_to_vtk(TJ_list)
